@@ -1,0 +1,54 @@
+using System.Text;
+using Newtonsoft.Json;
+
+namespace POSUNO.Helpers;
+
+public class ApiService
+{
+    public static async Task<Response> LoginAsync(LoginRequest model)
+    {
+        try
+        {
+            string request = JsonConvert.SerializeObject(model);
+            StringContent content = new StringContent(request, Encoding.UTF8, "application/json");
+
+            HttpClientHandler handler = new HttpClientHandler()
+            {
+                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+            };
+
+            //string url = Settings.GetApiUrl();
+            HttpClient client = new HttpClient(handler)
+            {
+                BaseAddress = new Uri("https://localhost:7154/" /*url*/)
+            };
+            HttpResponseMessage response = await client.PostAsync("api/Account/Login", content);
+            string result = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+            {
+                return new Response
+                {
+                    IsSuccess = false,
+                    Message = result,
+                };
+            }
+            User user=JsonConvert.DeserializeObject<User>(result);
+            return new Response
+            {
+                IsSuccess = true,
+                Result = user
+            };
+
+            
+
+        }
+        catch (Exception ex)
+        {
+            return new Response
+            {
+                IsSuccess = false,
+                Message = ex.Message,
+            };
+        }
+    }
+}
